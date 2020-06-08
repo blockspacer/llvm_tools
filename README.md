@@ -96,6 +96,8 @@ if(NOT IWYU)
 endif()
 ```
 
+NOTE: use `-s llvm_tools:build_type=Release` during `conan install`
+
 ## LICENSE
 
 MIT for conan package. Packaged source uses own license, see https://releases.llvm.org/2.8/LICENSE.TXT and https://github.com/root-project/root/blob/master/LICENSE
