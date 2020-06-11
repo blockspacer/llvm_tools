@@ -21,12 +21,15 @@ class LLVMToolsConan(ConanFile):
 
     options = {
         "link_ltinfo": [True, False],
-        "include_what_you_use": [True, False]
+        "include_what_you_use": [True, False],
+        # see https://clang.llvm.org/docs/MemorySanitizer.html#handling-external-code
+        "msan": [True, False]
     }
 
     default_options = {
         "link_ltinfo": False,
-        "include_what_you_use": True
+        "include_what_you_use": True,
+        "msan": False
     }
 
     exports = ["LICENSE.md"]
@@ -165,7 +168,12 @@ class LLVMToolsConan(ConanFile):
         cpu_count = max(tools.cpu_count() - 3, 1)
         self.output.info('Detected %s CPUs' % (cpu_count))
 
-        cmake.definitions["LLVM_ENABLE_PROJECTS"]="clang;clang-tools-extra;libunwind;lld"
+        if self.options.msan:
+            # NOTE: force compile `libcxx;libcxxabi` with msan
+            cmake.definitions["LLVM_ENABLE_PROJECTS"]="libcxx;libcxxabi;clang;clang-tools-extra;libunwind;lld"
+            cmake.definitions["LLVM_USE_SANITIZER"]="MemoryWithOrigins"
+        else:
+            cmake.definitions["LLVM_ENABLE_PROJECTS"]="libcxx;libcxxabi;clang;clang-tools-extra;libunwind;lld"
 
         # see Building LLVM with CMake https://llvm.org/docs/CMake.html
         cmake.definitions["LLVM_PARALLEL_COMPILE_JOBS"]=cpu_count
