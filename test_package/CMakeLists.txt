@@ -175,6 +175,7 @@ find_program(IWYU include-what-you-use
   NO_CMAKE_SYSTEM_PATH
 )
 if(NOT IWYU)
-  message(FATAL_ERROR "IWYU not found")
+  # NOTE: not FATAL_ERROR, IWYU optional
+  message(WARNING "IWYU not found")
 endif()
 

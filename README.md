@@ -360,7 +360,9 @@ export LDFLAGS=-m64
 
 conan source .
 conan install --build missing --profile clang  -s build_type=Release .
-conan build . --build-folder=.
+conan build . \
+  --build-folder . \
+  --source-folder .
 conan package --build-folder=. .
 conan export-pkg . conan/stable --settings build_type=Release --force --profile clang
 conan test test_package llvm_tools/master@conan/stable --settings build_type=Release --profile clang
@@ -417,37 +419,127 @@ nm -an $(find ~/.conan -name *libc++.so.1 | grep "llvm_tools/master/conan/stable
 
 Debug build of llvm may take a lot of time or crash due to lack of RAM or CPU
 
-## Docker build with `--no-cache`
+## How to keep multiple llvm_tools package revisions in local cache
+
+Usually you want to build LLVM in multiple configurations and re-use pre-built packages. Approach below allows to avoid full re-builds via `conan create` on each change in options.
+
+Option 1: Create conan server. Solves problem because only conan client can have only one revision installed simultaneously (see https://github.com/conan-io/conan/issues/6836 )
+
+Option 2: Store on disk multiple pre-built llvm_tools packages. Export desired version and work with that version globally.
+
+Example below shows how to install multiple LLVM revisions: both with default options and with sanitizer (MSAN) enabled (not that you can enable only one of them globally using `conan export-pkg`).
+
+Build locally (revision with default options):
 
 ```bash
-export MY_IP=$(ip route get 8.8.8.8 | sed -n '/src/{s/.*src *\([^ ]*\).*/\1/p;q}')
-sudo -E docker build \
-    --build-arg PKG_NAME=llvm_tools \
-    --build-arg PKG_CHANNEL=conan/stable \
-    --build-arg PKG_UPLOAD_NAME=llvm_tools/master@conan/stable \
-    --build-arg CONAN_EXTRA_REPOS="conan-local http://$MY_IP:8081/artifactory/api/conan/conan False" \
-    --build-arg CONAN_EXTRA_REPOS_USER="user -p password1 -r conan-local admin" \
-    --build-arg CONAN_UPLOAD="conan upload --all -r=conan-local -c --retry 3 --retry-wait 10 --force" \
-    --build-arg BUILD_TYPE=Release \
-    -f llvm_tools_source.Dockerfile --tag llvm_tools_repoadd_source_install . --no-cache
+export CC=gcc
+export CXX=g++
 
-sudo -E docker build \
-    --build-arg PKG_NAME=llvm_tools \
-    --build-arg PKG_CHANNEL=conan/stable \
-    --build-arg PKG_UPLOAD_NAME=llvm_tools/master@conan/stable \
-    --build-arg CONAN_EXTRA_REPOS="conan-local http://$MY_IP:8081/artifactory/api/conan/conan False" \
-    --build-arg CONAN_EXTRA_REPOS_USER="user -p password1 -r conan-local admin" \
-    --build-arg CONAN_UPLOAD="conan upload --all -r=conan-local -c --retry 3 --retry-wait 10 --force" \
-    --build-arg BUILD_TYPE=Release \
-    -f llvm_tools_build.Dockerfile --tag llvm_tools_build_package_export_test_upload . --no-cache
+# https://www.pclinuxos.com/forum/index.php?topic=129566.0
+# export LDFLAGS="$LDFLAGS -ltinfo -lncurses"
 
-# OPTIONAL: clear unused data
-sudo -E docker rmi llvm_tools_*
+# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
+# - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
+export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+
+$CC --version
+$CXX --version
+
+# see BUGFIX (i386 instead of x86_64)
+export CXXFLAGS=-m64
+export CFLAGS=-m64
+export LDFLAGS=-m64
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan install . \
+    --install-folder local_build \
+    -s build_type=Release \
+    -s llvm_tools:build_type=Release \
+    --profile clang
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan source . --source-folder local_build
+
+conan build . \
+  --build-folder local_build \
+  --source-folder local_build
+
+conan package . \
+  --build-folder local_build \
+  --package-folder local_build/package_dir
 ```
 
-## How to run single command in container using bash with gdb support
+Build locally (revision with msan enabled):
 
 ```bash
-# about gdb support https://stackoverflow.com/a/46676907
-docker run --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --rm --entrypoint="/bin/bash" -v "$PWD":/home/u/project_copy -w /home/u/project_copy -p 50051:50051 --name DEV_llvm_tools llvm_tools -c pwd
+export CC=gcc
+export CXX=g++
+
+# https://www.pclinuxos.com/forum/index.php?topic=129566.0
+# export LDFLAGS="$LDFLAGS -ltinfo -lncurses"
+
+# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
+# - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
+export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+
+$CC --version
+$CXX --version
+
+# see BUGFIX (i386 instead of x86_64)
+export CXXFLAGS=-m64
+export CFLAGS=-m64
+export LDFLAGS=-m64
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan install . \
+    --install-folder local_build_msan \
+    -s build_type=Release \
+    -s llvm_tools:build_type=Release \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=False \
+      -o llvm_tools:enable_msan=True
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan source . --source-folder local_build_msan
+
+conan build . \
+  --build-folder local_build_msan \
+  --source-folder local_build_msan
+
+conan package . \
+  --build-folder local_build_msan \
+  --package-folder local_build_msan/package_dir
+```
+
+Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
+
+```bash
+conan export-pkg . \
+  --build-folder local_build_msan \
+  conan/stable \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_msan=True
 ```

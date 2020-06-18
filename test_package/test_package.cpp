@@ -255,13 +255,13 @@ struct AnnotationMatchFactory
 
 int main(int argc, char* argv[])
 {
+/*
   std::vector< const char* > args_vec{"clang_app", "-extra-arg=-DCLANG_ENABLED=1", "-help"};
 
   int args_arc = args_vec.size();
 
   const char **args_argv = &(args_vec[0]);
 
-/*
   TODO:
   ~/.conan/data/llvm_tools/master/conan/stable/package/de9a9bb1919df123807ce088d433998bfaaa3c53/lib/libclangTooling.a(CompilationDatabase.cpp.o): In function `clang::tooling::FixedCompilationDatabase::loadFromCommandLine(int&, char const* const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, llvm::Twine)':
   CompilationDatabase.cpp:(.text._ZN5clang7tooling24FixedCompilationDatabase19loadFromCommandLineERiPKPKcRNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEN4llvm5TwineE+0x259): undefined reference to `clang::TextDiagnosticPrinter::TextDiagnosticPrinter(llvm::raw_ostream&, clang::DiagnosticOptions*, bool)'
