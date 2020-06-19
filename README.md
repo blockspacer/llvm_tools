@@ -363,8 +363,16 @@ conan install --build missing --profile clang  -s build_type=Release .
 conan build . \
   --build-folder . \
   --source-folder .
-conan package --build-folder=. .
-conan export-pkg . conan/stable --settings build_type=Release --force --profile clang
+conan package . \
+  --build-folder . \
+  --package-folder . \
+  --source-folder .
+conan export-pkg . \
+  conan/stable \
+  --package-folder . \
+  --settings build_type=Release \
+  --force \
+  --profile clang
 conan test test_package llvm_tools/master@conan/stable --settings build_type=Release --profile clang
 ```
 
@@ -476,7 +484,19 @@ conan build . \
 
 conan package . \
   --build-folder local_build \
-  --package-folder local_build/package_dir
+  --package-folder local_build/package_dir \
+  --source-folder local_build
+```
+
+Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
+
+```bash
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang
 ```
 
 Build locally (revision with msan enabled):
@@ -528,15 +548,16 @@ conan build . \
 
 conan package . \
   --build-folder local_build_msan \
-  --package-folder local_build_msan/package_dir
+  --package-folder local_build_msan/package_dir \
+  --source-folder local_build_msan
 ```
 
 Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
 
 ```bash
 conan export-pkg . \
-  --build-folder local_build_msan \
   conan/stable \
+  --package-folder local_build_msan/package_dir \
   --settings build_type=Release \
   --force \
   --profile clang \
