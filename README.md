@@ -437,7 +437,7 @@ Option 2: Store on disk multiple pre-built llvm_tools packages. Export desired v
 
 Example below shows how to install multiple LLVM revisions: both with default options and with sanitizer (MSAN) enabled (not that you can enable only one of them globally using `conan export-pkg`).
 
-Build locally (revision with default options):
+## Build locally (revision with default options):
 
 ```bash
 export CC=gcc
@@ -499,7 +499,7 @@ conan export-pkg . \
   --profile clang
 ```
 
-Build locally (revision with msan enabled):
+## Build locally (revision with msan enabled):
 
 ```bash
 export CC=gcc
@@ -563,4 +563,68 @@ conan export-pkg . \
   --profile clang \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_msan=True
+```
+
+## Build locally (revision with include_what_you_use enabled):
+
+```bash
+export CC=gcc
+export CXX=g++
+
+# https://www.pclinuxos.com/forum/index.php?topic=129566.0
+# export LDFLAGS="$LDFLAGS -ltinfo -lncurses"
+
+# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
+# - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
+export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+
+$CC --version
+$CXX --version
+
+# see BUGFIX (i386 instead of x86_64)
+export CXXFLAGS=-m64
+export CFLAGS=-m64
+export LDFLAGS=-m64
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan install . \
+    --install-folder local_build_iwyu \
+    -s build_type=Release \
+    -s llvm_tools:build_type=Release \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=True
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan source . --source-folder local_build_iwyu
+
+conan build . \
+  --build-folder local_build_iwyu \
+  --source-folder local_build_iwyu
+
+conan package . \
+  --build-folder local_build_iwyu \
+  --package-folder local_build_iwyu/package_dir \
+  --source-folder local_build_iwyu
+```
+
+Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
+
+```bash
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build_iwyu/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=True
 ```

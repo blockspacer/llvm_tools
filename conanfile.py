@@ -31,14 +31,20 @@ class LLVMToolsConan(ConanFile):
         "link_ltinfo": [True, False],
         "include_what_you_use": [True, False],
         # see https://clang.llvm.org/docs/MemorySanitizer.html#handling-external-code
-        "enable_msan": [True, False]
+        "enable_msan": [True, False],
+        "enable_tsan": [True, False],
+        "enable_ubsan": [True, False],
+        "enable_asan": [True, False]
     }
 
     default_options = {
         "force_x86_64": True,
         "link_ltinfo": False,
         "include_what_you_use": True,
-        "enable_msan": False
+        "enable_msan": False,
+        "enable_tsan": False,
+        "enable_ubsan": False,
+        "enable_asan": False
     }
 
     exports = ["LICENSE.md"]
@@ -154,13 +160,19 @@ class LLVMToolsConan(ConanFile):
         compiler_version = Version(self.settings.compiler.version.value)
         if self.settings.build_type != "Release":
             raise ConanInvalidConfiguration("This library is compatible only with Release builds. Debug build of llvm may take a lot of time or crash due to lack of RAM or CPU")
-        if self.options.enable_msan \
+        if (self.options.enable_msan \
+            or self.options.enable_tsan \
+            or self.options.enable_asan \
+            or self.options.enable_ubsan) \
             and not self.settings.compiler in ['clang', 'apple-clang', 'clang-cl']:
             raise ConanInvalidConfiguration("This package is only compatible with clang")
             if Version(self.settings.compiler.version.value) < "6.0":
                 raise ConanInvalidConfiguration("%s %s couldn't be built by clang < 6.0" % (self.name, self.version))
 
-        if self.options.include_what_you_use and self.options.enable_msan:
+        if self.options.include_what_you_use and (self.options.enable_msan \
+            or self.options.enable_tsan \
+            or self.options.enable_asan \
+            or self.options.enable_ubsan):
             raise ConanInvalidConfiguration("disable include_what_you_use when sanitizers enabled")
 
     def requirements(self):
@@ -171,7 +183,11 @@ class LLVMToolsConan(ConanFile):
         self.run('git clone -b {} --progress --depth 100 --recursive --recurse-submodules {} {}'.format(self.llvm_version, self.llvm_repo_url, self._llvm_source_subfolder))
 
         # IWYU
-        if self.options.include_what_you_use and not self.options.enable_msan:
+        if self.options.include_what_you_use \
+            and not self.options.enable_msan \
+            and not self.options.enable_tsan \
+            and not self.options.enable_ubsan \
+            and not self.options.enable_asan:
             self.run('git clone -b {} --progress --depth 100 --recursive --recurse-submodules {} {}'.format(self.iwyu_version, self.iwyu_repo_url, self._iwyu_source_subfolder))
 
     def _configure_cmake(self, llvm_projects, llvm_runtimes, llvm_sanitizer=""):
@@ -186,35 +202,6 @@ class LLVMToolsConan(ConanFile):
         # don't hang all CPUs and force OS to kill build process
         cpu_count = max(tools.cpu_count() - 3, 1)
         self.output.info('Detected %s CPUs' % (cpu_count))
-
-        # NOTE: `libcxx;libcxxabi;compiler-rt;` in `LLVM_ENABLE_PROJECTS`
-        # required for builds with `-stdlib=libc++ -lc++abi`
-        #if self.options.enable_msan:
-            #cmake.definitions["CMAKE_C_COMPILER"]="clang"
-            #
-            #cmake.definitions["CMAKE_CXX_COMPILER"]="clang++"
-            #
-            #cmake.definitions["LLVM_EXTERNAL_LIBCXX_SOURCE_DIR"]='{}'.format(os.path.join(llvm_src_dir, "libcxx"))
-            #
-            #cmake.definitions["LLVM_EXTERNAL_LIBCXXABI_SOURCE_DIR"]='{}'.format(os.path.join(llvm_src_dir, "libcxxabi"))
-            #
-            #cmake.definitions["LLVM_EXTERNAL_COMPILER-RT_SOURCE_DIR"]='{}'.format(os.path.join(llvm_src_dir, "compiler-rt"))
-            #
-            #cmake.definitions["LLVM_EXTERNAL_LLDB_SOURCE_DIR-RT_SOURCE_DIR"]='{}'.format(os.path.join(llvm_src_dir, "lldb"))
-            #
-            #cmake.definitions["LLVM_EXTERNAL_CLANG_SOURCE_DIR-RT_SOURCE_DIR"]='{}'.format(os.path.join(llvm_src_dir, "clang"))
-            #
-            #cmake.definitions["LLVM_BINUTILS_INCDIR-RT_SOURCE_DIR"]="/opt/llvm/binutils_src/include"
-            #
-            # NOTE: force compile `libcxx;libcxxabi;compiler-rt;` with msan
-            #cmake.definitions["LLVM_ENABLE_PROJECTS"]="libcxx;libcxxabi;compiler-rt;clang;clang-tools-extra;libunwind;compiler-rt;lld"
-            #cmake.definitions["LLVM_ENABLE_PROJECTS"]=llvm_projects
-            # NOTE: To build with MSan support you first need to build libc++ with MSan support.
-            # MemoryWithOrigins enables both -fsanitize=memory and -fsanitize-memory-track-origins
-            # see https://github.com/google/sanitizers/wiki/MemorySanitizer#origins-tracking
-            #cmake.definitions["LLVM_USE_SANITIZER"]="MemoryWithOrigins"
-            #
-            # LLVM_ENABLE_LTO
 
         # Semicolon-separated list of projects to build (clang;clang-tools-extra;compiler-rt;debuginfo-tests;libc;libclc;libcxx;libcxxabi;libunwind;lld;lldb;llgo;mlir;openmp;parallel-libs;polly;pstl), or "all".
         cmake.definitions["LLVM_ENABLE_PROJECTS"]=llvm_projects
@@ -298,7 +285,9 @@ class LLVMToolsConan(ConanFile):
             # LLVM_USE_SANITIZER Defaults to empty string.
             cmake.definitions["LLVM_USE_SANITIZER"]=""
 
-        # NOTE: msan build requires ~/.conan/data/llvm_tools/master/conan/stable/package/.../lib/clang/10.0.1/lib/linux/libclang_rt.msan_cxx-x86_64.a
+        # NOTE: msan build requires
+        # existing file ~/.conan/data/llvm_tools/master/conan/stable/package/.../lib/clang/10.0.1/lib/linux/libclang_rt.msan_cxx-x86_64.a
+        # same for tsan\ubsan\asan\etc.
         cmake.definitions["COMPILER_RT_BUILD_SANITIZERS"]="ON"
 
         #cmake.definitions["CMAKE_CXX_STANDARD"]="17"
@@ -474,14 +463,24 @@ class LLVMToolsConan(ConanFile):
         cmake.build(args=["--", "-j%s" % cpu_count])
         cmake.install()
 
-        # required for builds with `-stdlib=libc++ -lc++abi`
         if self.options.enable_msan:
             # NOTE: force compile `libcxx;libcxxabi;compiler-rt;` with msan
             # NOTE: To build with MSan support you first need to build libc++ with MSan support.
             # MemoryWithOrigins enables both -fsanitize=memory and -fsanitize-memory-track-origins
             # see https://github.com/google/sanitizers/wiki/MemorySanitizer#origins-tracking
             llvm_sanitizer_key = "MemoryWithOrigins" # TODO: Address;Undefined support
+        elif self.options.enable_asan:
+            llvm_sanitizer_key = "Address;Undefined"
+        elif self.options.enable_ubsan:
+            llvm_sanitizer_key = "Address;Undefined"
+        elif self.options.enable_tsan:
+            llvm_sanitizer_key = "Thread"
 
+        # required for builds with `-stdlib=libc++ -lc++abi`
+        if (self.options.enable_msan \
+            or self.options.enable_asan \
+            or self.options.enable_ubsan \
+            or self.options.enable_tsan):
             # NOTE: builds `libcxx;libcxxabi;compiler-rt;` separately (for sanitizers support)
             # NOTE: use uninstrumented llvm-tblgen https://stackoverflow.com/q/56454026
             cmake = self._configure_cmake(llvm_projects = "libcxx;libcxxabi;compiler-rt", \
@@ -579,6 +578,8 @@ class LLVMToolsConan(ConanFile):
             self.copy(pattern="*", dst=package_bin_dir, src=iwyu_bin_dir)
             self.copy(pattern=self._iwyu_source_subfolder, dst="src", src=self.build_folder)
             self.copy(pattern=self._iwyu_source_subfolder, dst="src", src=self.build_folder)
+
+        self.copy('*', dst='bin', src='{}/bin'.format(self.build_folder), keep_path=False)
 
         self.copy(pattern=llvm_src_dir, dst="src", src=self.build_folder)
         self.copy(pattern="LICENSE", dst="licenses", src=llvm_src_dir)
