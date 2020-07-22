@@ -581,6 +581,12 @@ class LLVMToolsConan(ConanFile):
 
         self.copy('*', dst='bin', src='{}/bin'.format(self.build_folder), keep_path=False)
 
+        # keep_path=True required by `/include/c++/v1/`
+        self.copy('*', dst='include', src='{}/include'.format(self.build_folder), keep_path=True)
+
+        # keep_path=True required by `/lib/clang/10.0.1/include/`
+        self.copy('*', dst='lib', src='{}/lib'.format(self.build_folder), keep_path=True)
+
         self.copy(pattern=llvm_src_dir, dst="src", src=self.build_folder)
         self.copy(pattern="LICENSE", dst="licenses", src=llvm_src_dir)
         self.copy(pattern="*.so*", dst="lib", src="lib", keep_path=False)
