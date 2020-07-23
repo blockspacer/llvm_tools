@@ -443,6 +443,8 @@ Example below shows how to install multiple LLVM revisions: both with default op
 
 ## Build locally (revision with default options):
 
+NOTE: options below disable both IWYU and sanitizers (but clang compiler, llvm libs, scan-build, clang-tidy, clang-format, etc. will be enabled).
+
 ```bash
 export CC=gcc
 export CXX=g++
@@ -501,6 +503,70 @@ conan export-pkg . \
   --settings build_type=Release \
   --force \
   --profile clang
+```
+
+## Build locally (revision with include_what_you_use enabled):
+
+```bash
+export CC=gcc
+export CXX=g++
+
+# https://www.pclinuxos.com/forum/index.php?topic=129566.0
+# export LDFLAGS="$LDFLAGS -ltinfo -lncurses"
+
+# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
+# - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
+export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+
+$CC --version
+$CXX --version
+
+# see BUGFIX (i386 instead of x86_64)
+export CXXFLAGS=-m64
+export CFLAGS=-m64
+export LDFLAGS=-m64
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan install . \
+    --install-folder local_build_iwyu \
+    -s build_type=Release \
+    -s llvm_tools:build_type=Release \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=True
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan source . --source-folder local_build_iwyu
+
+conan build . \
+  --build-folder local_build_iwyu \
+  --source-folder local_build_iwyu
+
+conan package . \
+  --build-folder local_build_iwyu \
+  --package-folder local_build_iwyu/package_dir \
+  --source-folder local_build_iwyu
+```
+
+Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
+
+```bash
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build_iwyu/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=True
 ```
 
 ## Build locally (revision with msan enabled):
@@ -569,7 +635,7 @@ conan export-pkg . \
     -o llvm_tools:enable_msan=True
 ```
 
-## Build locally (revision with include_what_you_use enabled):
+## Build locally (revision with asan enabled):
 
 ```bash
 export CC=gcc
@@ -597,11 +663,12 @@ CONAN_LOGGING_LEVEL=10 \
 GIT_SSL_NO_VERIFY=true \
   cmake -E time \
     conan install . \
-    --install-folder local_build_iwyu \
+    --install-folder local_build_asan \
     -s build_type=Release \
     -s llvm_tools:build_type=Release \
     --profile clang \
-      -o llvm_tools:include_what_you_use=True
+      -o llvm_tools:include_what_you_use=False \
+      -o llvm_tools:enable_asan=True
 
 CONAN_REVISIONS_ENABLED=1 \
 CONAN_VERBOSE_TRACEBACK=1 \
@@ -609,16 +676,16 @@ CONAN_PRINT_RUN_COMMANDS=1 \
 CONAN_LOGGING_LEVEL=10 \
 GIT_SSL_NO_VERIFY=true \
   cmake -E time \
-    conan source . --source-folder local_build_iwyu
+    conan source . --source-folder local_build_asan
 
 conan build . \
-  --build-folder local_build_iwyu \
-  --source-folder local_build_iwyu
+  --build-folder local_build_asan \
+  --source-folder local_build_asan
 
 conan package . \
-  --build-folder local_build_iwyu \
-  --package-folder local_build_iwyu/package_dir \
-  --source-folder local_build_iwyu
+  --build-folder local_build_asan \
+  --package-folder local_build_asan/package_dir \
+  --source-folder local_build_asan
 ```
 
 Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
@@ -626,9 +693,10 @@ Now use `conan export-pkg` (or conan editable mode) to globally enable some revi
 ```bash
 conan export-pkg . \
   conan/stable \
-  --package-folder local_build_iwyu/package_dir \
+  --package-folder local_build_asan/package_dir \
   --settings build_type=Release \
   --force \
   --profile clang \
-    -o llvm_tools:include_what_you_use=True
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_asan=True
 ```
