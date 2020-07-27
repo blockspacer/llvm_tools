@@ -700,3 +700,135 @@ conan export-pkg . \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_asan=True
 ```
+
+## Build locally (revision with tsan enabled):
+
+```bash
+export CC=gcc
+export CXX=g++
+
+# https://www.pclinuxos.com/forum/index.php?topic=129566.0
+# export LDFLAGS="$LDFLAGS -ltinfo -lncurses"
+
+# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
+# - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
+export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+
+$CC --version
+$CXX --version
+
+# see BUGFIX (i386 instead of x86_64)
+export CXXFLAGS=-m64
+export CFLAGS=-m64
+export LDFLAGS=-m64
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan install . \
+    --install-folder local_build_tsan \
+    -s build_type=Release \
+    -s llvm_tools:build_type=Release \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=False \
+      -o llvm_tools:enable_tsan=True
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan source . --source-folder local_build_tsan
+
+conan build . \
+  --build-folder local_build_tsan \
+  --source-folder local_build_tsan
+
+conan package . \
+  --build-folder local_build_tsan \
+  --package-folder local_build_tsan/package_dir \
+  --source-folder local_build_tsan
+```
+
+Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
+
+```bash
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build_tsan/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_tsan=True
+```
+
+## Build locally (revision with ubsan enabled):
+
+```bash
+export CC=gcc
+export CXX=g++
+
+# https://www.pclinuxos.com/forum/index.php?topic=129566.0
+# export LDFLAGS="$LDFLAGS -ltinfo -lncurses"
+
+# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
+# - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
+export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+
+$CC --version
+$CXX --version
+
+# see BUGFIX (i386 instead of x86_64)
+export CXXFLAGS=-m64
+export CFLAGS=-m64
+export LDFLAGS=-m64
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan install . \
+    --install-folder local_build_ubsan \
+    -s build_type=Release \
+    -s llvm_tools:build_type=Release \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=False \
+      -o llvm_tools:enable_ubsan=True
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan source . --source-folder local_build_ubsan
+
+conan build . \
+  --build-folder local_build_ubsan \
+  --source-folder local_build_ubsan
+
+conan package . \
+  --build-folder local_build_ubsan \
+  --package-folder local_build_ubsan/package_dir \
+  --source-folder local_build_ubsan
+```
+
+Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
+
+```bash
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build_ubsan/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_ubsan=True
+```
