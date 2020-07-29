@@ -332,7 +332,7 @@ CONAN_REVISIONS_ENABLED=1 \
     CONAN_PRINT_RUN_COMMANDS=1 \
     CONAN_LOGGING_LEVEL=10 \
     GIT_SSL_NO_VERIFY=true \
-    conan create . conan/stable -s build_type=Release --profile clang --build missing
+    conan create . conan/stable -s build_type=Release --profile clang --build missing --build cascade
 
 CONAN_REVISIONS_ENABLED=1 \
     CONAN_VERBOSE_TRACEBACK=1 \
@@ -363,7 +363,7 @@ export CFLAGS=-m64
 export LDFLAGS=-m64
 
 conan source .
-conan install --build missing --profile clang  -s build_type=Release .
+conan install --build missing --build cascade --profile clang  -s build_type=Release .
 conan build . \
   --build-folder . \
   --source-folder .
@@ -376,7 +376,8 @@ conan export-pkg . \
   --package-folder . \
   --settings build_type=Release \
   --force \
-  --profile clang
+  --profile clang \
+  -o llvm_tools:include_what_you_use=True
 conan test test_package llvm_tools/master@conan/stable --settings build_type=Release --profile clang
 ```
 
@@ -502,7 +503,8 @@ conan export-pkg . \
   --package-folder local_build/package_dir \
   --settings build_type=Release \
   --force \
-  --profile clang
+  --profile clang \
+  -o llvm_tools:include_what_you_use=True
 ```
 
 ## Build locally (revision with include_what_you_use enabled):
@@ -831,4 +833,26 @@ conan export-pkg . \
   --profile clang \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_ubsan=True
+```
+
+## How to perform checks
+
+```bash
+# see https://stackoverflow.com/a/47705420
+nm -an $(find ~/.conan -name *libc++.so.1 | grep "llvm_tools/master/conan/stable/package/") | grep san
+```
+
+Validate that `ldd` points to instrumented `libc++`, see https://stackoverflow.com/a/35197295
+
+Validate that compile log contains `-fsanitize=`
+
+You can test that sanitizer can catch error by adding into `SalutationTest` from `test_package/test_package.cpp` code:
+
+```cpp
+  // MSAN test
+  int r;
+  int* a = new int[10];
+  a[5] = 0;
+  if (a[r])
+    printf("xx\n");
 ```
