@@ -505,6 +505,8 @@ conan export-pkg . \
   --force \
   --profile clang \
   -o llvm_tools:include_what_you_use=True
+
+rm -rf local_build/package_dir
 ```
 
 ## Build locally (revision with include_what_you_use enabled):
@@ -569,6 +571,8 @@ conan export-pkg . \
   --force \
   --profile clang \
     -o llvm_tools:include_what_you_use=True
+
+rm -rf local_build_iwyu/package_dir
 ```
 
 ## Build locally (revision with msan enabled):
@@ -635,6 +639,8 @@ conan export-pkg . \
   --profile clang \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_msan=True
+
+rm -rf local_build_msan/package_dir
 ```
 
 ## Build locally (revision with asan enabled):
@@ -701,6 +707,8 @@ conan export-pkg . \
   --profile clang \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_asan=True
+
+rm -rf local_build_asan/package_dir
 ```
 
 ## Build locally (revision with tsan enabled):
@@ -767,6 +775,8 @@ conan export-pkg . \
   --profile clang \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_tsan=True
+
+rm -rf local_build_tsan/package_dir
 ```
 
 ## Build locally (revision with ubsan enabled):
@@ -833,6 +843,8 @@ conan export-pkg . \
   --profile clang \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_ubsan=True
+
+rm -rf local_build_ubsan/package_dir
 ```
 
 ## How to perform checks
