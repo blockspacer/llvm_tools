@@ -664,6 +664,10 @@ conan export-pkg . \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_msan=True
 
+# llvm-ar, llvm-symbolizer, etc. must be NOT sanitized,
+# but libc++, libc++abi, compiler-rt must be sanitized
+nm -an local_build_msan/bin/llvm-ar | grep msan
+
 rm -rf local_build_msan/package_dir
 ```
 
@@ -731,6 +735,10 @@ conan export-pkg . \
   --profile clang \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_asan=True
+
+# llvm-ar, llvm-symbolizer, etc. must be NOT sanitized,
+# but libc++, libc++abi, compiler-rt must be sanitized
+nm -an local_build_asan/bin/llvm-ar | grep asan
 
 rm -rf local_build_asan/package_dir
 ```
@@ -800,6 +808,10 @@ conan export-pkg . \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_tsan=True
 
+# llvm-ar, llvm-symbolizer, etc. must be NOT sanitized,
+# but libc++, libc++abi, compiler-rt must be sanitized
+nm -an local_build_tsan/bin/llvm-ar | grep tsan
+
 rm -rf local_build_tsan/package_dir
 ```
 
@@ -868,5 +880,19 @@ conan export-pkg . \
     -o llvm_tools:include_what_you_use=False \
     -o llvm_tools:enable_ubsan=True
 
+# llvm-ar, llvm-symbolizer, etc. must be NOT sanitized,
+# but libc++, libc++abi, compiler-rt must be sanitized
+nm -an local_build_ubsan/bin/llvm-ar | grep ubsan
+
 rm -rf local_build_ubsan/package_dir
 ```
+
+## FIXME: No rule to make target 'projects/libc/src/math/round.o'
+
+Please file a bug report or suggest solution. Unable to add `libc` to `LLVM_ENABLE_PROJECTS`:
+
+```bash
+No rule to make target 'projects/libc/src/math/round.o'
+```
+
+see https://github.com/fwsGonzo/libriscv/issues/4

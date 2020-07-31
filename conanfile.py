@@ -28,6 +28,7 @@ class LLVMToolsConan(ConanFile):
         "force_x86_64": [True, False],
         "link_ltinfo": [True, False],
         "include_what_you_use": [True, False],
+        # Sanitizer is well supported on Linux
         # see https://clang.llvm.org/docs/MemorySanitizer.html#handling-external-code
         "enable_msan": [True, False],
         "enable_tsan": [True, False],
@@ -270,6 +271,8 @@ class LLVMToolsConan(ConanFile):
             if not os.path.exists(llvm_tblgen):
                 raise Exception("Unable to find path: {}".format(llvm_tblgen))
         else:
+            # use UNINSTRUMENTED llvm-ar, llvml-symbolizer, etc.
+            cmake.definitions["LLVM_USE_SANITIZER"]=""
             cmake.definitions["LLVM_BUILD_TOOLS"]="ON"
             cmake.definitions["LLVM_TOOL_CLANG_TOOLS_EXTRA_BUILD"]="ON"
             cmake.definitions["CLANG_ENABLE_STATIC_ANALYZER"]="ON"
@@ -278,8 +281,6 @@ class LLVMToolsConan(ConanFile):
             cmake.definitions["CLANG_TOOL_CLANG_FORMAT_BUILD"]="ON"
             cmake.definitions["CLANG_ENABLE_FORMAT"]="ON"
             cmake.definitions["CLANG_TOOL_CLANG_FUZZER_BUILD"]="ON"
-            # LLVM_USE_SANITIZER Defaults to empty string.
-            cmake.definitions["LLVM_USE_SANITIZER"]=""
 
         # NOTE: msan build requires
         # existing file ~/.conan/data/llvm_tools/master/conan/stable/package/.../lib/clang/10.0.1/lib/linux/libclang_rt.msan_cxx-x86_64.a
@@ -288,9 +289,17 @@ class LLVMToolsConan(ConanFile):
 
         # TODO: make customizable
         #cmake.definitions["CMAKE_CXX_STANDARD"]="17"
-        cmake.definitions["BUILD_SHARED_LIBS"]="OFF"
+
+        if self.options.enable_msan:
+          # Static linking is not supported.
+          # see https://clang.llvm.org/docs/MemorySanitizer.html
+          cmake.definitions["BUILD_SHARED_LIBS"]="ON"
+        else:
+          cmake.definitions["BUILD_SHARED_LIBS"]="OFF"
+
         # TODO: make customizable
         #cmake.definitions["CMAKE_POSITION_INDEPENDENT_CODE"]="ON"
+        
         cmake.definitions["BUILD_TESTS"]="OFF"
 
         # TODO: make customizable
@@ -347,6 +356,11 @@ class LLVMToolsConan(ConanFile):
         # Whether to build libcxxabi as part of LLVM
         cmake.definitions["LLVM_TOOL_LIBCXXABI_BUILD"]="ON"
 
+        # FIXME: No rule to make target 'projects/libc/src/math/round.o'
+        # see https://github.com/fwsGonzo/libriscv/issues/4
+        # Whether to build libc as part of LLVM
+        #cmake.definitions["LLVM_TOOL_LIBC_BUILD"]="ON"
+
         # Whether to build libcxx as part of LLVM
         cmake.definitions["LLVM_TOOL_LIBCXX_BUILD"]="ON"
 
@@ -397,7 +411,8 @@ class LLVMToolsConan(ConanFile):
         # when making a debug or asserts build speed it up by building a release tablegen
         cmake.definitions["LLVM_OPTIMIZED_TABLEGEN"]="ON"
 
-        cmake.definitions["LVM_ENABLE_PLUGINS"]="ON"
+        # TODO
+        #cmake.definitions["LLVM_ENABLE_PLUGINS"]="ON"
 
         cmake.definitions["LLVM_ENABLE_ASSERTIONS"]="OFF"
 
@@ -408,7 +423,7 @@ class LLVMToolsConan(ConanFile):
 
     # Importing files copies files from the local store to your project.
     def imports(self):
-        dest = os.getenv("CONAN_IMPORT_PATH", "bin")
+        CONAN_IMPORT_PATH = os.getenv("CONAN_IMPORT_PATH", "bin")
         self.output.info("CONAN_IMPORT_PATH is %s" % CONAN_IMPORT_PATH)
 
     def build(self):
@@ -422,21 +437,37 @@ class LLVMToolsConan(ConanFile):
             configure_llvm_projects = "clang;clang-tools-extra;compiler-rt;libunwind;lld;lldb"
 
         # NOTE: builds `libcxx;libcxxabi;compiler-rt;` separately (for sanitizers support)
-        # TODO: libc;
         cmake = self._configure_cmake(llvm_projects = configure_llvm_projects, \
             #llvm_runtimes = "compiler-rt;libunwind" \
             llvm_runtimes = "",
         )
+
+        # see https://fuchsia.googlesource.com/fuchsia/+/HEAD/docs/development/build/toolchain.md
         # -j flag for parallel builds
         cmake.build(args=["--", "-j%s" % cpu_count])
+        #cmake.build(args=["--target", "clang", "--", "-j%s" % cpu_count])
+        #cmake.build(args=["--target", "clang-tools-extra", "--", "-j%s" % cpu_count])
+        #cmake.build(args=["--target", "libunwind", "--", "-j%s" % cpu_count])
+        #cmake.build(args=["--target", "lld", "--", "-j%s" % cpu_count])
+        #cmake.build(args=["--target", "lldb", "--", "-j%s" % cpu_count])
+        #cmake.build(args=["--target", "libcxx", "--", "-j%s" % cpu_count])
+        #cmake.build(args=["--target", "libcxxabi", "--", "-j%s" % cpu_count])
+        #cmake.build(args=["--target", "compiler-rt", "--", "-j%s" % cpu_count])
         cmake.install()
 
+        # We want to enable sanitizers on `libcxx;libcxxabi;compiler-rt`,
+        # but NOT on whole LLVM.
+        # Sanitizer requires that all program code is instrumented.
+        # This also includes any libraries that the program depends on, even libc.
         if self.options.enable_msan:
             # NOTE: force compile `libcxx;libcxxabi;compiler-rt;` with msan
             # NOTE: To build with MSan support you first need to build libc++ with MSan support.
             # MemoryWithOrigins enables both -fsanitize=memory and -fsanitize-memory-track-origins
             # see https://github.com/google/sanitizers/wiki/MemorySanitizer#origins-tracking
-            llvm_sanitizer_key = "MemoryWithOrigins" # TODO: Address;Undefined support
+            # TODO: use-of-uninitialized-value in llvm-symbolizer
+            llvm_sanitizer_key = "MemoryWithOrigins"
+            #llvm_sanitizer_key = "Memory"
+            #llvm_sanitizer_key = ""
         elif self.options.enable_asan:
             llvm_sanitizer_key = "Address;Undefined"
         elif self.options.enable_ubsan:
@@ -452,12 +483,14 @@ class LLVMToolsConan(ConanFile):
             # NOTE: builds `libcxx;libcxxabi;compiler-rt;` separately (for sanitizers support)
             # NOTE: use uninstrumented llvm-tblgen https://stackoverflow.com/q/56454026
             cmake = self._configure_cmake(llvm_projects = "libcxx;libcxxabi;compiler-rt", \
-                #llvm_runtimes = "compiler-rt;libcxx;libcxxabi", \
                 llvm_runtimes = "", \
                 llvm_sanitizer=llvm_sanitizer_key)
 
             # -j flag for parallel builds
             cmake.build(args=["--", "-j%s" % cpu_count])
+            #cmake.build(args=["--target", "libcxx", "--", "-j%s" % cpu_count])
+            #cmake.build(args=["--target", "libcxxabi", "--", "-j%s" % cpu_count])
+            #cmake.build(args=["--target", "compiler-rt", "--", "-j%s" % cpu_count])
             cmake.install()
 
         # NOTE: builds before sanitized `libcxx;libcxxabi;compiler-rt;`
@@ -488,6 +521,8 @@ class LLVMToolsConan(ConanFile):
               else:
                   if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
                       shutil.copy2(s, d)
+            elif verbose:
+              self.output.info('IGNORED copying %s' % (item))
 
     def package(self):
         self.output.info('self.settings.os: %s' % (self.settings.os))
