@@ -203,8 +203,11 @@ class LLVMToolsConan(ConanFile):
         cmake.definitions["LLVM_PARALLEL_COMPILE_JOBS"]=cpu_count
         cmake.definitions["LLVM_COMPILER_JOBS"]=cpu_count
         cmake.definitions["LLVM_PARALLEL_LINK_JOBS"]=1
+
+        # TODO: make customizable
         #cmake.definitions["LLVM_LINK_LLVM_DYLIB"]=1
 
+        # TODO: make customizable
         # This should speed up building debug builds
         # see https://www.productive-cpp.com/improving-cpp-builds-with-split-dwarf/
         #cmake.definitions["LLVM_USE_SPLIT_DWARF"]="ON"
@@ -222,7 +225,8 @@ class LLVMToolsConan(ConanFile):
         if len(llvm_sanitizer) > 0:
             cmake.definitions["LLVM_USE_SANITIZER"]=llvm_sanitizer
             self.output.info('LLVM_USE_SANITIZER = {}'.format(llvm_sanitizer))
-            #
+
+            # TODO: make customizable
             # see libcxx in LLVM_ENABLE_PROJECTS
             # compile using libc++ instead of the system default
             #cmake.definitions["LLVM_ENABLE_LIBCXX"]="ON"
@@ -235,10 +239,9 @@ class LLVMToolsConan(ConanFile):
             # TODO: BUG when LTO ON: https://bugs.gentoo.org/show_bug.cgi?format=multiple&id=667108
             #cmake.definitions["LLVM_ENABLE_LTO"]="ON"
 
-            # TODO
+            # TODO: make customizable
             # LLVM_USE_LINKER
 
-            #
             # sanitizer needs only libc++ and libc++abi
             cmake.definitions["LLVM_BUILD_TOOLS"]="OFF"
             cmake.definitions["LLVM_TOOL_CLANG_TOOLS_EXTRA_BUILD"]="OFF"
@@ -254,7 +257,7 @@ class LLVMToolsConan(ConanFile):
 
             cmake.definitions["LLVM_BUILD_UTILS"]="ON"
 
-
+            # TODO: make customizable
             # LLVM_BUILD_EXTERNAL_COMPILER_RT:BOOL
 
             # Build LLVM and tools with PGO instrumentation
@@ -283,43 +286,42 @@ class LLVMToolsConan(ConanFile):
         # same for tsan\ubsan\asan\etc.
         cmake.definitions["COMPILER_RT_BUILD_SANITIZERS"]="ON"
 
+        # TODO: make customizable
         #cmake.definitions["CMAKE_CXX_STANDARD"]="17"
         cmake.definitions["BUILD_SHARED_LIBS"]="OFF"
+        # TODO: make customizable
         #cmake.definitions["CMAKE_POSITION_INDEPENDENT_CODE"]="ON"
         cmake.definitions["BUILD_TESTS"]="OFF"
 
+        # TODO: make customizable
         # If disabled, do not try to build the OCaml and go bindings.
         cmake.definitions["LLVM_ENABLE_BINDINGS"]="OFF"
 
+        # TODO: make customizable
         # Install symlinks from the binutils tool names to the corresponding LLVM tools. For example, ar will be symlinked to llvm-ar.
         #cmake.definitions["LLVM_INSTALL_BINUTILS_SYMLINKS"]="ON"
 
+        # TODO: make customizable
         #cmake.definitions["LLVM_INSTALL_CCTOOLS_SYMLINKS"]="ON"
 
         # hack (forcing -m64)
         # sanitizer_allocator.cpp.o' is incompatible with i386:x86-64 output
         # see https://bugs.llvm.org/show_bug.cgi?id=42463
         if self.options.force_x86_64:
-            # breaks find for LLVMConfig.cmake
-            #cmake.definitions["LLVM_LIBDIR_SUFFIX"]="64"
-
             cmake.definitions["CMAKE_C_FLAGS"]="-m64"
             cmake.definitions["CMAKE_CXX_FLAGS"]="-m64"
             cmake.definitions["CMAKE_EXE_LINKER_FLAGS"]="-m64"
             cmake.definitions["CMAKE_MODULE_LINKER_FLAGS"]="-m64"
             cmake.definitions["CMAKE_SHARED_LINKER_FLAGS"]="-m64"
             cmake.definitions["LLVM_BUILD_32_BITS"]="OFF"
-            #cmake.definitions["LLVM_BUILD_32_BITS"]="ON"
             # LLVM target to use for native code generation. This is required for JIT generation. It defaults to “host”, meaning that it shall pick the architecture of the machine where LLVM is being built. If you are cross-compiling, set it to the target architecture name.
             cmake.definitions["LLVM_TARGET_ARCH"]="x86_64"
-            #cmake.definitions["LLVM_TARGET_ARCH"]="x86"
-            # Semicolon-separated list of targets to build, or all for building all targets. Case-sensitive. Defaults to all. Example: -DLLVM_TARGETS_TO_BUILD="X86;PowerPC".
-            #cmake.definitions["LLVM_TARGETS_TO_BUILD"]="x86"
             # Default triple for which compiler-rt runtimes will be built.
             cmake.definitions["COMPILER_RT_DEFAULT_TARGET_TRIPLE"]="x86_64-unknown-linux-gnu"
             # Default target for which LLVM will generate code.
             cmake.definitions["LLVM_DEFAULT_TARGET_TRIPLE"]="x86_64-unknown-linux-gnu"
 
+        # TODO: make customizable
         #cmake.definitions["PYTHON_EXECUTABLE"]=""
 
         cmake.definitions["LLVM_INCLUDE_TESTS"]="OFF"
@@ -332,12 +334,13 @@ class LLVMToolsConan(ConanFile):
         cmake.definitions["LLVM_ENABLE_OCAMLDOC"]="OFF"
         cmake.definitions["LLVM_ENABLE_SPHINX"]="OFF"
         cmake.definitions["LLVM_ENABLE_RTTI"]="OFF"
+        # TODO: make customizable
         #cmake.definitions["LLVM_ENABLE_RTTI"]="ON"
 
         # Whether to build compiler-rt as part of LLVM
         cmake.definitions["LLVM_TOOL_COMPILER_RT_BUILD"]="ON"
 
-        # TODO
+        # TODO: make customizable
         # Whether to build gold as part of LLVM
         cmake.definitions["LLVM_TOOL_GOLD_BUILD"]="ON"
 
@@ -366,22 +369,29 @@ class LLVMToolsConan(ConanFile):
         # Use compiler-rt instead of libgcc
         # cmake.definitions["LIBUNWIND_USE_COMPILER_RT"]="ON"
 
+        # TODO: make customizable
         # LIBCXXABI_USE_COMPILER_RT
 
+        # TODO: make customizable
         # LIBCXXABI_USE_LLVM_UNWINDER
 
+        # TODO: make customizable
         # Host on which LLVM binaries will run
         #LLVM_HOST_TRIPLE:STRING=x86_64-unknown-linux-gnu
 
+        # TODO: make customizable
         #//Whether to build llc as part of LLVM
         #LLVM_TOOL_LLC_BUILD:BOOL=ON
 
+        # TODO: make customizable
         #//Whether to build lldb as part of LLVM
         #LLVM_TOOL_LLDB_BUILD:BOOL=OFF
 
+        # TODO: make customizable
         #//Whether to build lld as part of LLVM
         #LLVM_TOOL_LLD_BUILD:BOOL=OFF
 
+        # TODO: make customizable
         #COMPILER_RT_USE_BUILTINS_LIBRARY
 
         # when making a debug or asserts build speed it up by building a release tablegen
@@ -395,33 +405,6 @@ class LLVMToolsConan(ConanFile):
         cmake.configure(source_folder=llvm_src_dir)
 
         return cmake
-
-    # TODO: remove
-    #def _configure_cmake_iwyu(self, llvm_src_dir):
-    #    self.output.info('configuring IWYU')
-    #    self.output.info('os.getcwd() %s' % (os.getcwd()))
-
-    #    cmake = CMake(self, set_cmake_flags=True)
-    #    cmake.verbose = True
-
-    #    # don't hang all CPUs and force OS to kill build process
-    #    cpu_count = max(tools.cpu_count() - 3, 1)
-    #    self.output.info('Detected %s CPUs' % (cpu_count))
-
-    #    #cmake.definitions["IWYU_LLVM_ROOT_PATH"]=llvm_src_dir
-    #    #cmake.definitions["CMAKE_PREFIX_PATH"]=llvm_src_dir
-
-    #    cmake.definitions["IWYU_LLVM_ROOT_PATH"]=self.build_folder
-    #    cmake.definitions["CMAKE_PREFIX_PATH"]=self.build_folder
-    #    cmake.definitions["CMAKE_MODULE_PATH"]=self.build_folder
-    #    self.output.info('IWYU_LLVM_ROOT_PATH %s' % (cmake.definitions#["IWYU_LLVM_ROOT_PATH"]))
-    #    self.output.info('CMAKE_PREFIX_PATH %s' % (cmake.definitions#["CMAKE_PREFIX_PATH"]))
-    #    self.output.info('CMAKE_MODULE_PATH %s' % (cmake.definitions#["CMAKE_MODULE_PATH"]))
-
-    #    # The CMakeLists.txt file must be in `source_folder`
-    #    cmake.configure(source_folder=self._iwyu_source_subfolder, #build_folder=self._iwyu_source_subfolder)
-
-    #    return cmake
 
     # Importing files copies files from the local store to your project.
     def imports(self):
@@ -493,7 +476,7 @@ class LLVMToolsConan(ConanFile):
     def copytree(self, src, dst, symlinks=False, ignore=None, verbose=False):
         if not os.path.exists(dst):
             os.makedirs(dst)
-        ignore_list = ['.travis.yml', '.git']
+        ignore_list = ['.travis.yml', '.git', '.make', '.o', '.obj', '.marks', '.internal', 'CMakeFiles', 'CMakeCache']
         for item in os.listdir(src):
             if item not in ignore_list:
               s = os.path.join(src, item)
@@ -534,6 +517,8 @@ class LLVMToolsConan(ConanFile):
         self.copytree( \
           '{}/lib'.format(self.build_folder), \
           '{}/lib'.format(self.package_folder))
+
+        self.output.info('packaged for os: %s' % (self.settings.os))
 
     def package_info(self):
         self.cpp_info.includedirs = ["include"]
