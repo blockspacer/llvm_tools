@@ -1,4 +1,4 @@
-import os
+import os, re, stat, fnmatch, platform, glob, traceback, shutil
 from conans import ConanFile, CMake, tools
 from conans.tools import Version
 from conans.errors import ConanInvalidConfiguration
@@ -25,8 +25,6 @@ class LLVMToolsConan(ConanFile):
         # hack (forcing -m64)
         # sanitizer_allocator.cpp.o' is incompatible with i386:x86-64 output
         # see https://bugs.llvm.org/show_bug.cgi?id=42463
-        # FIXME by dpkg --remove-architecture i386
-        # see https://superuser.com/a/714392
         "force_x86_64": [True, False],
         "link_ltinfo": [True, False],
         "include_what_you_use": [True, False],
@@ -142,11 +140,6 @@ class LLVMToolsConan(ConanFile):
         'clangStaticAnalyzerCheckers': 0,
         'clangARCMigrate': 0,
     }
-
-    # conan search double-conversion* -r=conan-center
-#    requires = (
-#        "openssl/OpenSSL_1_1_1-stable@conan/stable",
-#    )
 
     @property
     def _llvm_source_subfolder(self):
@@ -306,8 +299,6 @@ class LLVMToolsConan(ConanFile):
         # hack (forcing -m64)
         # sanitizer_allocator.cpp.o' is incompatible with i386:x86-64 output
         # see https://bugs.llvm.org/show_bug.cgi?id=42463
-        # FIXME by dpkg --remove-architecture i386
-        # see https://superuser.com/a/714392
         if self.options.force_x86_64:
             # breaks find for LLVMConfig.cmake
             #cmake.definitions["LLVM_LIBDIR_SUFFIX"]="64"
@@ -435,13 +426,7 @@ class LLVMToolsConan(ConanFile):
     # Importing files copies files from the local store to your project.
     def imports(self):
         dest = os.getenv("CONAN_IMPORT_PATH", "bin")
-        self.output.info("CONAN_IMPORT_PATH is ${CONAN_IMPORT_PATH}")
-        self.copy("license*", dst=dest, ignore_case=True)
-        self.copy("*.dll", dst=dest, src="bin")
-        self.copy("*.so", dst=dest, src="bin")
-        self.copy("*.dylib*", dst=dest, src="lib")
-        self.copy("*.lib*", dst=dest, src="lib")
-        self.copy("*.a*", dst=dest, src="lib")
+        self.output.info("CONAN_IMPORT_PATH is %s" % CONAN_IMPORT_PATH)
 
     def build(self):
         # don't hang all CPUs and force OS to kill build process
@@ -503,42 +488,23 @@ class LLVMToolsConan(ConanFile):
                 with tools.chdir('build'):
                     self.run('cmake --build . %s' % (cmake.build_config))
                     self.run('cmake --build . --target install')
-                # TODO: remove
-                #self.output.info('os.getcwd() %s' % (os.getcwd()))
-                #llvm_src_dir = os.path.join(self._llvm_source_subfolder, "llvm")
-                #cmake = self._configure_cmake_iwyu(llvm_src_dir)
 
-                ## don't hang all CPUs or force OS to kill build process
-                #cpu_count = max(tools.cpu_count() - 2, 1)
-                #self.output.info('Detected %s CPUs' % (cpu_count))
-
-                ## -j flag for parallel builds
-                #self.output.info('Building include_what_you_use')
-                #cmake.build(args=["--", "-j%s" % cpu_count])
-
-        # # file is a broken symlink
-        # cling_broken_symlink = os.path.join(self.build_folder, 'lib', 'libcling.so')
-        # #if(os.path.islink(cling_broken_symlink)):
-        # try:
-        #     self.output.info('removing broken symlink: %s' % (cling_broken_symlink))
-        #     os.unlink(cling_broken_symlink)
-        # # If the given path is
-        # # a directory
-        # except IsADirectoryError:
-        #     self.output.warn('the given path is a directory: %s' % # (cling_broken_symlink))
-#
-        # # If path is invalid
-        # # or does not exists
-        # except FileNotFoundError :
-        #     self.output.warn('no such file or directory found: %s' % # (cling_broken_symlink))
-#
-        # # If the process has not
-        # # the permission to remove
-        # # the given file path
-        # except PermissionError:
-        #     self.output.warn('permission denied: %s' % (cling_broken_symlink))
-        # #else:
-        # #    self.output.warn('expected to be broken symlink: %s' % # (cling_broken_symlink))
+    # https://stackoverflow.com/a/13814557
+    def copytree(self, src, dst, symlinks=False, ignore=None, verbose=False):
+        if not os.path.exists(dst):
+            os.makedirs(dst)
+        ignore_list = ['.travis.yml', '.git']
+        for item in os.listdir(src):
+            if item not in ignore_list:
+              s = os.path.join(src, item)
+              d = os.path.join(dst, item)
+              if verbose:
+                self.output.info('copying %s into %d' % (s, d))
+              if os.path.isdir(s):
+                  self.copytree(s, d, symlinks, ignore)
+              else:
+                  if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
+                      shutil.copy2(s, d)
 
     def package(self):
         self.output.info('self.settings.os: %s' % (self.settings.os))
@@ -546,74 +512,30 @@ class LLVMToolsConan(ConanFile):
 
         llvm_src_dir = os.path.join(self._llvm_source_subfolder, "llvm")
 
-        # # file is a broken symlink
-        # cling_broken_symlink = os.path.join(self.package_folder, 'lib', 'libcling.so')
-        # #if(os.path.islink(cling_broken_symlink)):
-        # try:
-        #     self.output.info('removing broken symlink: %s' % (cling_broken_symlink))
-        #     os.unlink(cling_broken_symlink)
-        # # If the given path is
-        # # a directory
-        # except IsADirectoryError:
-        #     self.output.warn('the given path is a directory: %s' % # (cling_broken_symlink))
-#
-        # # If path is invalid
-        # # or does not exists
-        # except FileNotFoundError :
-        #     self.output.warn('no such file or directory found: %s' % # (cling_broken_symlink))
-#
-        # # If the process has not
-        # # the permission to remove
-        # # the given file path
-        # except PermissionError:
-        #     self.output.warn('permission denied: %s' % (cling_broken_symlink))
-        # #else:
-        # #    self.output.warn('expected to be broken symlink: %s' % # (cling_broken_symlink))
-
         package_bin_dir = os.path.join(self.package_folder, "bin")
 
         if self.options.include_what_you_use:
             iwyu_bin_dir = os.path.join(self._iwyu_source_subfolder, "build", "bin")
             self.output.info('copying %s into %s' % (iwyu_bin_dir, package_bin_dir))
-            self.copy(pattern="*", dst=package_bin_dir, src=iwyu_bin_dir)
-            self.copy(pattern=self._iwyu_source_subfolder, dst="src", src=self.build_folder)
-            self.copy(pattern=self._iwyu_source_subfolder, dst="src", src=self.build_folder)
+            self.copytree( \
+              iwyu_bin_dir, \
+              package_bin_dir)
 
-        self.copy('*', dst='bin', src='{}/bin'.format(self.build_folder), keep_path=False)
+        self.copytree( \
+          '{}/bin'.format(self.build_folder), \
+          '{}/bin'.format(self.package_folder))
 
         # keep_path=True required by `/include/c++/v1/`
-        self.copy('*', dst='include', src='{}/include'.format(self.build_folder), keep_path=True)
+        self.copytree( \
+          '{}/include'.format(self.build_folder), \
+          '{}/include'.format(self.package_folder))
 
         # keep_path=True required by `/lib/clang/10.0.1/include/`
-        self.copy('*', dst='lib', src='{}/lib'.format(self.build_folder), keep_path=True)
-
-        self.copy(pattern=llvm_src_dir, dst="src", src=self.build_folder)
-        self.copy(pattern="LICENSE", dst="licenses", src=llvm_src_dir)
-        self.copy(pattern="*.so*", dst="lib", src="lib", keep_path=False)
-        self.copy(pattern="*.a", dst="lib", src="lib", keep_path=False)
-        self.copy(pattern="*.h", dst="include", src="include", keep_path=True)
-        self.copy(pattern="LICENSE", dst="licenses", src=self._iwyu_source_subfolder)
-
-        #if self.settings.os == 'Darwin':
-        #    libext = 'dylib'
-        #elif self.settings.os == 'Linux':
-        #    libext = 'so'
-
-        #self.copy('*', src='%s/include'  % self.install_dir, dst='include')
-
-        #for f in list(self.llvm_libs.keys()):
-        #    self.copy('lib%s.%s' % (f, libext), src='%s/lib' % self._llvm_source_subfolder, dst='lib')
-        #self.copy('*', src='%s/lib/clang/%s/lib/darwin' % (self._llvm_source_subfolder, self.llvm_source_version), dst='lib/clang/%s/lib/darwin' % self.llvm_source_version)
-        # Yes, these are include files that need to be copied to the lib folder.
-        #self.copy('*', src='%s/lib/clang/%s/include' % (self._llvm_source_subfolder, self.llvm_source_version), dst='lib/clang/%s/include' % self.llvm_source_version)
-
-        #cmake = self._configure_cmake("libcxx;libcxxabi;compiler-rt;clang;clang-tools-extra;libunwind;lld")
-        #cmake.install()
+        self.copytree( \
+          '{}/lib'.format(self.build_folder), \
+          '{}/lib'.format(self.package_folder))
 
     def package_info(self):
-        #self.cpp_info.libs = tools.collect_libs(self)
-        #self.cpp_info.libs.sort(reverse=True)
-
         self.cpp_info.includedirs = ["include"]
         self.cpp_info.libdirs = ["lib"]
         self.cpp_info.bindirs = ["bin", "libexec"]
@@ -652,15 +574,7 @@ class LLVMToolsConan(ConanFile):
         self.env_info.PATH.append(libdir)
 
         self.cpp_info.libs += list(self.llvm_libs.keys())
-        #self.cpp_info.libs += ['c++abi']
-        #self.cpp_info.libs.remove('profile_rt')
-        #self.cpp_info.libs = [lib for lib in self.cpp_info.libs if "profile_rt" not in lib]
-
-        #self.cpp_info.defines += ['LLVMDIR=%s' % (cpu_count)]
 
         self.output.info("LIBRARIES: %s" % self.cpp_info.libs)
         self.output.info("Package folder: %s" % self.package_folder)
         self.env_info.CONAN_LLVM_TOOLS_ROOT = self.package_folder
-
-
-

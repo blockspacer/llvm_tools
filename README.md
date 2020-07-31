@@ -113,19 +113,23 @@ You can change compiler to clang from conan package like so:
     NO_CMAKE_SYSTEM_PATH
   )
 
-  set(CMAKE_C_COMPILER
-    ${CLANG_PROGRAM}
-    CACHE string
-    "Clang C compiler" FORCE)
+  # we can NOT change CMAKE_C_COMPILER dynamically
+  # (it will corrupt cmake cache), but we can check CC env. var
+  if(NOT "${CMAKE_C_COMPILER}" STREQUAL "${CLANG_PROGRAM}")
+    message(WARNING "CMAKE_C_COMPILER=${CMAKE_C_COMPILER} does not match ${CLANG_PROGRAM}. Run command:")
+    message(FATAL_ERROR "export CC=${CLANG_PROGRAM}")
+  endif()
 
   # ...
   # use find_program for CMAKE_CXX_COMPILER, llvm-ar, etc.
   # ...
 
-  set(CMAKE_CXX_COMPILER
-    ${CLANGPP_PROGRAM}
-    CACHE string
-    "Clang C++ compiler" FORCE)
+  # we can NOT change CMAKE_CXX_COMPILER dynamically
+  # (it will corrupt cmake cache), but we can check CXX env. var
+  if(NOT "${CMAKE_CXX_COMPILER}" STREQUAL "${CLANGPP_PROGRAM}")
+    message(WARNING "CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} does not match ${CLANGPP_PROGRAM}. Run command:")
+    message(FATAL_ERROR "export CXX=${CLANGPP_PROGRAM}")
+  endif()
 
   # Set linkers and other build tools.
   # Related documentation
@@ -224,6 +228,8 @@ You can use `libc++` from conan package like so:
       "-v")
 ```
 
+See for example `macro(compile_with_llvm_tools)` from [https://github.com/blockspacer/cmake_helper_utils_conan/blob/master/cmake/Findcmake_helper_utils.cmake](https://github.com/blockspacer/cmake_helper_utils_conan/blob/master/cmake/Findcmake_helper_utils.cmake)
+
 ## Supported platforms
 
 Tested on Ubuntu 18, x86_64.
@@ -288,10 +294,6 @@ sudo ln -s /usr/include/x86_64-linux-gnu/asm/ /usr/include/asm
 Fixes `sanitizer_allocator.cpp.o' is incompatible with i386:x86-64 output`, see https://bugs.llvm.org/show_bug.cgi?id=42463 and section about i386 on https://reviews.llvm.org/D58184
 
 ```bash
-# see https://superuser.com/a/714392
-apt-get purge ".*:i386"
-dpkg --remove-architecture i386
-
 export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
@@ -441,6 +443,28 @@ Option 1: Create conan server. Solves problem because only conan client can have
 Option 2: Store on disk multiple pre-built llvm_tools packages. Export desired version and work with that version globally.
 
 Example below shows how to install multiple LLVM revisions: both with default options and with sanitizer (MSAN) enabled (not that you can enable only one of them globally using `conan export-pkg`).
+
+## How to perform checks
+
+```bash
+# see https://stackoverflow.com/a/47705420
+nm -an $(find ~/.conan -name *libc++.so.1 | grep "llvm_tools/master/conan/stable/package/") | grep san
+```
+
+Validate that `ldd` points to instrumented `libc++`, see https://stackoverflow.com/a/35197295
+
+Validate that compile log contains `-fsanitize=`
+
+You can test that sanitizer can catch error by adding into `SalutationTest` from `test_package/test_package.cpp` code:
+
+```cpp
+  // MSAN test
+  int r;
+  int* a = new int[10];
+  a[5] = 0;
+  if (a[r])
+    printf("xx\n");
+```
 
 ## Build locally (revision with default options):
 
@@ -845,26 +869,4 @@ conan export-pkg . \
     -o llvm_tools:enable_ubsan=True
 
 rm -rf local_build_ubsan/package_dir
-```
-
-## How to perform checks
-
-```bash
-# see https://stackoverflow.com/a/47705420
-nm -an $(find ~/.conan -name *libc++.so.1 | grep "llvm_tools/master/conan/stable/package/") | grep san
-```
-
-Validate that `ldd` points to instrumented `libc++`, see https://stackoverflow.com/a/35197295
-
-Validate that compile log contains `-fsanitize=`
-
-You can test that sanitizer can catch error by adding into `SalutationTest` from `test_package/test_package.cpp` code:
-
-```cpp
-  // MSAN test
-  int r;
-  int* a = new int[10];
-  a[5] = 0;
-  if (a[r])
-    printf("xx\n");
 ```
