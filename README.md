@@ -313,6 +313,11 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
@@ -355,6 +360,11 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
@@ -397,6 +407,11 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
@@ -480,6 +495,11 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
@@ -545,6 +565,11 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
@@ -611,6 +636,11 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
@@ -683,6 +713,11 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
@@ -755,6 +790,11 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
@@ -827,6 +867,11 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
