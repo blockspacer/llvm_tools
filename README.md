@@ -529,26 +529,41 @@ GIT_SSL_NO_VERIFY=true \
   cmake -E time \
     conan source . --source-folder local_build
 
-conan build . \
-  --build-folder local_build \
-  --source-folder local_build
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan build . \
+    --build-folder local_build \
+    --source-folder local_build
 
-conan package . \
-  --build-folder local_build \
-  --package-folder local_build/package_dir \
-  --source-folder local_build
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan package . \
+    --build-folder local_build \
+    --package-folder local_build/package_dir \
+    --source-folder local_build
 ```
 
 Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
 
 ```bash
-conan export-pkg . \
-  conan/stable \
-  --package-folder local_build/package_dir \
-  --settings build_type=Release \
-  --force \
-  --profile clang \
-  -o llvm_tools:include_what_you_use=True
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan export-pkg . \
+    conan/stable \
+    --package-folder local_build/package_dir \
+    --settings build_type=Release \
+    --force \
+    --profile clang \
+    -o llvm_tools:include_what_you_use=True
 
 rm -rf local_build/package_dir
 ```
@@ -600,26 +615,41 @@ GIT_SSL_NO_VERIFY=true \
   cmake -E time \
     conan source . --source-folder local_build_iwyu
 
-conan build . \
-  --build-folder local_build_iwyu \
-  --source-folder local_build_iwyu
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan build . \
+    --build-folder local_build_iwyu \
+    --source-folder local_build_iwyu
 
-conan package . \
-  --build-folder local_build_iwyu \
-  --package-folder local_build_iwyu/package_dir \
-  --source-folder local_build_iwyu
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan package . \
+    --build-folder local_build_iwyu \
+    --package-folder local_build_iwyu/package_dir \
+    --source-folder local_build_iwyu
 ```
 
 Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
 
 ```bash
-conan export-pkg . \
-  conan/stable \
-  --package-folder local_build_iwyu/package_dir \
-  --settings build_type=Release \
-  --force \
-  --profile clang \
-    -o llvm_tools:include_what_you_use=True
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan export-pkg . \
+    conan/stable \
+    --package-folder local_build_iwyu/package_dir \
+    --settings build_type=Release \
+    --force \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=True
 
 rm -rf local_build_iwyu/package_dir
 ```
@@ -672,27 +702,42 @@ GIT_SSL_NO_VERIFY=true \
   cmake -E time \
     conan source . --source-folder local_build_msan
 
-conan build . \
-  --build-folder local_build_msan \
-  --source-folder local_build_msan
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan build . \
+    --build-folder local_build_msan \
+    --source-folder local_build_msan
 
-conan package . \
-  --build-folder local_build_msan \
-  --package-folder local_build_msan/package_dir \
-  --source-folder local_build_msan
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan package . \
+    --build-folder local_build_msan \
+    --package-folder local_build_msan/package_dir \
+    --source-folder local_build_msan
 ```
 
 Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
 
 ```bash
-conan export-pkg . \
-  conan/stable \
-  --package-folder local_build_msan/package_dir \
-  --settings build_type=Release \
-  --force \
-  --profile clang \
-    -o llvm_tools:include_what_you_use=False \
-    -o llvm_tools:enable_msan=True
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan export-pkg . \
+    conan/stable \
+    --package-folder local_build_msan/package_dir \
+    --settings build_type=Release \
+    --force \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=False \
+      -o llvm_tools:enable_msan=True
 
 # llvm-ar, llvm-symbolizer, etc. must be NOT sanitized,
 # but libc++, libc++abi, compiler-rt must be sanitized
@@ -749,27 +794,42 @@ GIT_SSL_NO_VERIFY=true \
   cmake -E time \
     conan source . --source-folder local_build_asan
 
-conan build . \
-  --build-folder local_build_asan \
-  --source-folder local_build_asan
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan build . \
+    --build-folder local_build_asan \
+    --source-folder local_build_asan
 
-conan package . \
-  --build-folder local_build_asan \
-  --package-folder local_build_asan/package_dir \
-  --source-folder local_build_asan
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan package . \
+    --build-folder local_build_asan \
+    --package-folder local_build_asan/package_dir \
+    --source-folder local_build_asan
 ```
 
 Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
 
 ```bash
-conan export-pkg . \
-  conan/stable \
-  --package-folder local_build_asan/package_dir \
-  --settings build_type=Release \
-  --force \
-  --profile clang \
-    -o llvm_tools:include_what_you_use=False \
-    -o llvm_tools:enable_asan=True
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan export-pkg . \
+    conan/stable \
+    --package-folder local_build_asan/package_dir \
+    --settings build_type=Release \
+    --force \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=False \
+      -o llvm_tools:enable_asan=True
 
 # llvm-ar, llvm-symbolizer, etc. must be NOT sanitized,
 # but libc++, libc++abi, compiler-rt must be sanitized
@@ -826,27 +886,42 @@ GIT_SSL_NO_VERIFY=true \
   cmake -E time \
     conan source . --source-folder local_build_tsan
 
-conan build . \
-  --build-folder local_build_tsan \
-  --source-folder local_build_tsan
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan build . \
+    --build-folder local_build_tsan \
+    --source-folder local_build_tsan
 
-conan package . \
-  --build-folder local_build_tsan \
-  --package-folder local_build_tsan/package_dir \
-  --source-folder local_build_tsan
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan package . \
+    --build-folder local_build_tsan \
+    --package-folder local_build_tsan/package_dir \
+    --source-folder local_build_tsan
 ```
 
 Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
 
 ```bash
-conan export-pkg . \
-  conan/stable \
-  --package-folder local_build_tsan/package_dir \
-  --settings build_type=Release \
-  --force \
-  --profile clang \
-    -o llvm_tools:include_what_you_use=False \
-    -o llvm_tools:enable_tsan=True
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan export-pkg . \
+    conan/stable \
+    --package-folder local_build_tsan/package_dir \
+    --settings build_type=Release \
+    --force \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=False \
+      -o llvm_tools:enable_tsan=True
 
 # llvm-ar, llvm-symbolizer, etc. must be NOT sanitized,
 # but libc++, libc++abi, compiler-rt must be sanitized
@@ -903,27 +978,42 @@ GIT_SSL_NO_VERIFY=true \
   cmake -E time \
     conan source . --source-folder local_build_ubsan
 
-conan build . \
-  --build-folder local_build_ubsan \
-  --source-folder local_build_ubsan
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan build . \
+    --build-folder local_build_ubsan \
+    --source-folder local_build_ubsan
 
-conan package . \
-  --build-folder local_build_ubsan \
-  --package-folder local_build_ubsan/package_dir \
-  --source-folder local_build_ubsan
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan package . \
+    --build-folder local_build_ubsan \
+    --package-folder local_build_ubsan/package_dir \
+    --source-folder local_build_ubsan
 ```
 
 Now use `conan export-pkg` (or conan editable mode) to globally enable some revision of llvm_tools package.
 
 ```bash
-conan export-pkg . \
-  conan/stable \
-  --package-folder local_build_ubsan/package_dir \
-  --settings build_type=Release \
-  --force \
-  --profile clang \
-    -o llvm_tools:include_what_you_use=False \
-    -o llvm_tools:enable_ubsan=True
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan export-pkg . \
+    conan/stable \
+    --package-folder local_build_ubsan/package_dir \
+    --settings build_type=Release \
+    --force \
+    --profile clang \
+      -o llvm_tools:include_what_you_use=False \
+      -o llvm_tools:enable_ubsan=True
 
 # llvm-ar, llvm-symbolizer, etc. must be NOT sanitized,
 # but libc++, libc++abi, compiler-rt must be sanitized
