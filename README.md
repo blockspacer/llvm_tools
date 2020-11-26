@@ -375,14 +375,21 @@ export CFLAGS=-m64
 export LDFLAGS=-m64
 
 conan source .
+
 conan install --build missing --build cascade --profile clang  -s build_type=Release .
+
 conan build . \
   --build-folder . \
   --source-folder .
+
 conan package . \
   --build-folder . \
   --package-folder . \
   --source-folder .
+
+# remove before `conan export-pkg`
+conan remove llvm_tools
+
 conan export-pkg . \
   conan/stable \
   --package-folder . \
@@ -390,6 +397,7 @@ conan export-pkg . \
   --force \
   --profile clang \
   -o llvm_tools:include_what_you_use=True
+
 conan test test_package llvm_tools/master@conan/stable --settings build_type=Release --profile clang
 ```
 
@@ -538,6 +546,9 @@ CONAN_REVISIONS_ENABLED=1 \
     --build-folder local_build \
     --source-folder local_build
 
+# remove before `conan export-pkg`
+conan remove llvm_tools
+
 CONAN_REVISIONS_ENABLED=1 \
   CONAN_VERBOSE_TRACEBACK=1 \
   CONAN_PRINT_RUN_COMMANDS=1 \
@@ -623,6 +634,9 @@ CONAN_REVISIONS_ENABLED=1 \
   conan build . \
     --build-folder local_build_iwyu \
     --source-folder local_build_iwyu
+
+# remove before `conan export-pkg`
+conan remove llvm_tools
 
 CONAN_REVISIONS_ENABLED=1 \
   CONAN_VERBOSE_TRACEBACK=1 \
@@ -710,6 +724,9 @@ CONAN_REVISIONS_ENABLED=1 \
   conan build . \
     --build-folder local_build_msan \
     --source-folder local_build_msan
+
+# remove before `conan export-pkg`
+conan remove llvm_tools
 
 CONAN_REVISIONS_ENABLED=1 \
   CONAN_VERBOSE_TRACEBACK=1 \
@@ -803,6 +820,9 @@ CONAN_REVISIONS_ENABLED=1 \
     --build-folder local_build_asan \
     --source-folder local_build_asan
 
+# remove before `conan export-pkg`
+conan remove llvm_tools
+
 CONAN_REVISIONS_ENABLED=1 \
   CONAN_VERBOSE_TRACEBACK=1 \
   CONAN_PRINT_RUN_COMMANDS=1 \
@@ -895,6 +915,9 @@ CONAN_REVISIONS_ENABLED=1 \
     --build-folder local_build_tsan \
     --source-folder local_build_tsan
 
+# remove before `conan export-pkg`
+conan remove llvm_tools
+
 CONAN_REVISIONS_ENABLED=1 \
   CONAN_VERBOSE_TRACEBACK=1 \
   CONAN_PRINT_RUN_COMMANDS=1 \
@@ -986,6 +1009,9 @@ CONAN_REVISIONS_ENABLED=1 \
   conan build . \
     --build-folder local_build_ubsan \
     --source-folder local_build_ubsan
+
+# remove before `conan export-pkg`
+conan remove llvm_tools
 
 CONAN_REVISIONS_ENABLED=1 \
   CONAN_VERBOSE_TRACEBACK=1 \
