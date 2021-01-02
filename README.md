@@ -262,11 +262,11 @@ sudo apt-get -y install autoconf automake bison build-essential \
 ca-certificates llvm-dev libtool libtool-bin \
 libglib2.0-dev make nasm wget
 
-# Tested with clang 6.0 and gcc 7
-sudo apt-get -y install clang-6.0 g++-7 gcc-7
+# Tested with clang 10 and gcc 7
+sudo apt-get -y install clang-10 g++-7 gcc-7
 
 # llvm-config binary that coresponds to the same clang you are using to compile
-export LLVM_CONFIG=/usr/bin/llvm-config-6.0
+export LLVM_CONFIG=/usr/bin/llvm-config-10
 $LLVM_CONFIG --cxxflags
 
 sudo apt-get install libncurses5-dev libncursesw5-dev libtinfo-dev
