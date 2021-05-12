@@ -197,6 +197,9 @@ class LLVMToolsConan(ConanFile):
         cpu_count = max(tools.cpu_count() - 3, 1)
         self.output.info('Detected %s CPUs' % (cpu_count))
 
+        # https://bugs.llvm.org/show_bug.cgi?id=44074
+        cmake.definitions["EXECUTION_ENGINE_USE_LLVM_UNWINDER"]="ON"
+
         # Semicolon-separated list of projects to build (clang;clang-tools-extra;compiler-rt;debuginfo-tests;libc;libclc;libcxx;libcxxabi;libunwind;lld;lldb;llgo;mlir;openmp;parallel-libs;polly;pstl), or "all".
         cmake.definitions["LLVM_ENABLE_PROJECTS"]=llvm_projects
 
