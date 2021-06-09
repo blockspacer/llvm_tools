@@ -1,5 +1,7 @@
 # About
 
+DEPRECATED. Use instead https://github.com/blockspacer/conan_llvm_9
+
 NOTE: use `-s llvm_tools:build_type=Release` during `conan install`
 
 conan package for llvm tools:
@@ -255,6 +257,31 @@ MIT for conan package. Packaged source uses own license, see https://releases.ll
 
 See [https://github.com/include-what-you-use/include-what-you-use/issues/802#issuecomment-661058223](https://github.com/include-what-you-use/include-what-you-use/issues/802#issuecomment-661058223)
 
+## Best practices
+
+`CONAN_DISABLE_CHECK_COMPILER` is bad practice.
+
+Use approach similar to https://github.com/blockspacer/llvm_9_installer
+
+Best practice is to create separate recipe that depends on llvm package and populate env. vars.
+
+```python
+  # see https://docs.conan.io/en/latest/systems_cross_building/cross_building.html
+  self.env_info.CXX = os.path.join(llvm_root, "bin", "clang++")
+  self.env_info.CC = os.path.join(llvm_root, "bin", "clang")
+  self.env_info.AR = os.path.join(llvm_root, "bin", "llvm-ar")
+  self.env_info.STRIP = os.path.join(llvm_root, "bin", "llvm-strip")
+  self.env_info.LD = os.path.join(llvm_root, "bin", "ld.lld") # llvm-ld replaced by llvm-ld
+  self.env_info.NM = os.path.join(llvm_root, "bin", "llvm-nm")
+  # TODO: propagate to CMAKE_OBJDUMP?
+  self.env_info.OBJDUMP = os.path.join(llvm_root, "bin", "llvm-objdump")
+  self.env_info.SYMBOLIZER = os.path.join(llvm_root, "bin", "llvm-symbolizer")
+  self.env_info.RANLIB = os.path.join(llvm_root, "bin", "llvm-ranlib")
+  self.env_info.AS = os.path.join(llvm_root, "bin", "llvm-as")
+  # TODO: llvm-rc-rc or llvm-rc?
+  self.env_info.RC = os.path.join(llvm_root, "bin", "llvm-rc")
+```
+
 ## Before build
 
 Based on https://lldb.llvm.org/resources/build.html
@@ -342,18 +369,9 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
-CONAN_REVISIONS_ENABLED=1 \
-    CONAN_VERBOSE_TRACEBACK=1 \
-    CONAN_PRINT_RUN_COMMANDS=1 \
-    CONAN_LOGGING_LEVEL=10 \
-    GIT_SSL_NO_VERIFY=true \
-    conan create . conan/stable -s build_type=Release --profile clang --build missing --build cascade
+conan create . conan/stable -s build_type=Release --profile clang --build missing --build cascade
 
-CONAN_REVISIONS_ENABLED=1 \
-    CONAN_VERBOSE_TRACEBACK=1 \
-    CONAN_PRINT_RUN_COMMANDS=1 \
-    CONAN_LOGGING_LEVEL=10 \
-    conan upload $PKG_NAME --all -r=conan-local -c --retry 3 --retry-wait 10 --force
+conan upload $PKG_NAME --all -r=conan-local -c --retry 3 --retry-wait 10 --force
 ```
 
 ## Build with sanitizers support
@@ -384,16 +402,11 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
-CONAN_REVISIONS_ENABLED=1 \
-    CONAN_VERBOSE_TRACEBACK=1 \
-    CONAN_PRINT_RUN_COMMANDS=1 \
-    CONAN_LOGGING_LEVEL=10 \
-    GIT_SSL_NO_VERIFY=true \
-    conan create . conan/stable \
-      -s build_type=Release \
-      --profile clang \
-      -o llvm_tools:include_what_you_use=False \
-      -o llvm_tools:enable_msan=True
+conan create . conan/stable \
+  -s build_type=Release \
+  --profile clang \
+  -o llvm_tools:include_what_you_use=False \
+  -o llvm_tools:enable_msan=True
 ```
 
 NOTE: msan requires to set `-stdlib=libc++ -lc++abi` and use include and lib paths from conan package (see above). See https://github.com/google/sanitizers/wiki/MemorySanitizerLibcxxHowTo#instrumented-gtest
@@ -406,6 +419,16 @@ find ~/.conan -name libclang_rt.msan_cxx-x86_64.a
 
 # see https://stackoverflow.com/a/47705420
 nm -an $(find ~/.conan -name *libc++.so.1 | grep "llvm_tools/master/conan/stable/package/") | grep san
+```
+
+## Check that compilers works
+
+```bash
+$(find ~/.conan/data/llvm_tools -name llvm-config) --libs --system-libs
+
+$(find ~/.conan/data/llvm_tools -name llvm-config) --cxxflags --ldflags
+
+echo '#include <new>' | $(find ~/.conan/data/llvm_tools -name clang) -x c++ -fsyntax-only -v -
 ```
 
 ## Avoid Debug build, prefer Release builds
@@ -472,64 +495,39 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan install . \
-    --install-folder local_build \
-    -s build_type=Release \
-    -s llvm_tools:build_type=Release \
-    --profile clang
+cmake -E time \
+  conan install . \
+  --install-folder local_build \
+  -s build_type=Release \
+  -s llvm_tools:build_type=Release \
+  --profile clang
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan source . \
-    --source-folder local_build \
-    --install-folder local_build
+cmake -E time \
+  conan source . \
+  --source-folder local_build \
+  --install-folder local_build
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan build . \
-    --build-folder local_build \
-    --source-folder local_build \
-    --install-folder local_build
+conan build . \
+  --build-folder local_build \
+  --source-folder local_build \
+  --install-folder local_build
 
 # remove before `conan export-pkg`
 (CONAN_REVISIONS_ENABLED=1 \
-    conan remove --force llvm_tools || true)
+  conan remove --force llvm_tools || true)
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan package . \
-    --build-folder local_build \
-    --package-folder local_build/package_dir \
-    --source-folder local_build \
-    --install-folder local_build
+conan package . \
+  --build-folder local_build \
+  --package-folder local_build/package_dir \
+  --source-folder local_build \
+  --install-folder local_build
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan export-pkg . \
-    conan/stable \
-    --package-folder local_build/package_dir \
-    --settings build_type=Release \
-    --force \
-    --profile clang
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang
 
 cmake -E time \
   conan test test_package llvm_tools/master@conan/stable \
@@ -566,66 +564,48 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan install . \
-    --install-folder local_build_iwyu \
-    -s build_type=Release \
-    -s llvm_tools:build_type=Release \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=True
+export VERBOSE=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan source . \
-    --source-folder local_build_iwyu \
-    --install-folder local_build_iwyu
+cmake -E time \
+  conan install . \
+  --install-folder local_build_iwyu \
+  -s build_type=Release \
+  -s llvm_tools:build_type=Release \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=True
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan build . \
-    --build-folder local_build_iwyu \
-    --source-folder local_build_iwyu \
-    --install-folder local_build_iwyu
+cmake -E time \
+  conan source . \
+  --source-folder local_build_iwyu \
+  --install-folder local_build_iwyu
+
+conan build . \
+  --build-folder local_build_iwyu \
+  --source-folder local_build_iwyu \
+  --install-folder local_build_iwyu
 
 # remove before `conan export-pkg`
 (CONAN_REVISIONS_ENABLED=1 \
     conan remove --force llvm_tools || true)
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan package . \
-    --build-folder local_build_iwyu \
-    --package-folder local_build_iwyu/package_dir \
-    --source-folder local_build_iwyu \
-    --install-folder local_build_iwyu
+conan package . \
+  --build-folder local_build_iwyu \
+  --package-folder local_build_iwyu/package_dir \
+  --source-folder local_build_iwyu \
+  --install-folder local_build_iwyu
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan export-pkg . \
-    conan/stable \
-    --package-folder local_build_iwyu/package_dir \
-    --settings build_type=Release \
-    --force \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=True
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build_iwyu/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=True
 
 cmake -E time \
   conan test test_package llvm_tools/master@conan/stable \
@@ -663,68 +643,43 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan install . \
-    --install-folder local_build_msan \
-    -s build_type=Release \
-    -s llvm_tools:build_type=Release \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=False \
-      -o llvm_tools:enable_msan=True
+cmake -E time \
+  conan install . \
+  --install-folder local_build_msan \
+  -s build_type=Release \
+  -s llvm_tools:build_type=Release \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_msan=True
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan source . \
-    --source-folder local_build_msan \
-    --install-folder local_build_msan
+cmake -E time \
+  conan source . \
+  --source-folder local_build_msan \
+  --install-folder local_build_msan
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan build . \
-    --build-folder local_build_msan \
-    --source-folder local_build_msan \
-    --install-folder local_build_msan
+conan build . \
+  --build-folder local_build_msan \
+  --source-folder local_build_msan \
+  --install-folder local_build_msan
 
 # remove before `conan export-pkg`
 (CONAN_REVISIONS_ENABLED=1 \
     conan remove --force llvm_tools || true)
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan package . \
-    --build-folder local_build_msan \
-    --package-folder local_build_msan/package_dir \
-    --source-folder local_build_msan \
-    --install-folder local_build_msan
+conan package . \
+  --build-folder local_build_msan \
+  --package-folder local_build_msan/package_dir \
+  --source-folder local_build_msan \
+  --install-folder local_build_msan
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan export-pkg . \
-    conan/stable \
-    --package-folder local_build_msan/package_dir \
-    --settings build_type=Release \
-    --force \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=False \
-      -o llvm_tools:enable_msan=True
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build_msan/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_msan=True
 
 cmake -E time \
   conan test test_package llvm_tools/master@conan/stable \
@@ -767,68 +722,43 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan install . \
-    --install-folder local_build_asan \
-    -s build_type=Release \
-    -s llvm_tools:build_type=Release \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=False \
-      -o llvm_tools:enable_asan=True
+cmake -E time \
+  conan install . \
+  --install-folder local_build_asan \
+  -s build_type=Release \
+  -s llvm_tools:build_type=Release \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_asan=True
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan source . \
-    --source-folder local_build_asan \
-    --install-folder local_build_asan
+cmake -E time \
+  conan source . \
+  --source-folder local_build_asan \
+  --install-folder local_build_asan
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan build . \
-    --build-folder local_build_asan \
-    --source-folder local_build_asan \
-    --install-folder local_build_asan
+conan build . \
+  --build-folder local_build_asan \
+  --source-folder local_build_asan \
+  --install-folder local_build_asan
 
 # remove before `conan export-pkg`
 (CONAN_REVISIONS_ENABLED=1 \
     conan remove --force llvm_tools || true)
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan package . \
-    --build-folder local_build_asan \
-    --package-folder local_build_asan/package_dir \
-    --source-folder local_build_asan \
-    --install-folder local_build_asan
+conan package . \
+  --build-folder local_build_asan \
+  --package-folder local_build_asan/package_dir \
+  --source-folder local_build_asan \
+  --install-folder local_build_asan
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan export-pkg . \
-    conan/stable \
-    --package-folder local_build_asan/package_dir \
-    --settings build_type=Release \
-    --force \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=False \
-      -o llvm_tools:enable_asan=True
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build_asan/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_asan=True
 
 cmake -E time \
   conan test test_package llvm_tools/master@conan/stable \
@@ -871,68 +801,43 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan install . \
-    --install-folder local_build_tsan \
-    -s build_type=Release \
-    -s llvm_tools:build_type=Release \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=False \
-      -o llvm_tools:enable_tsan=True
+cmake -E time \
+  conan install . \
+  --install-folder local_build_tsan \
+  -s build_type=Release \
+  -s llvm_tools:build_type=Release \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_tsan=True
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan source . \
-    --source-folder local_build_tsan \
-    --install-folder local_build_tsan
+cmake -E time \
+  conan source . \
+  --source-folder local_build_tsan \
+  --install-folder local_build_tsan
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan build . \
-    --build-folder local_build_tsan \
-    --source-folder local_build_tsan \
-    --install-folder local_build_tsan
+conan build . \
+  --build-folder local_build_tsan \
+  --source-folder local_build_tsan \
+  --install-folder local_build_tsan
 
 # remove before `conan export-pkg`
 (CONAN_REVISIONS_ENABLED=1 \
     conan remove --force llvm_tools || true)
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan package . \
-    --build-folder local_build_tsan \
-    --package-folder local_build_tsan/package_dir \
-    --source-folder local_build_tsan \
-    --install-folder local_build_tsan
+conan package . \
+  --build-folder local_build_tsan \
+  --package-folder local_build_tsan/package_dir \
+  --source-folder local_build_tsan \
+  --install-folder local_build_tsan
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan export-pkg . \
-    conan/stable \
-    --package-folder local_build_tsan/package_dir \
-    --settings build_type=Release \
-    --force \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=False \
-      -o llvm_tools:enable_tsan=True
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build_tsan/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_tsan=True
 
 cmake -E time \
   conan test test_package llvm_tools/master@conan/stable \
@@ -975,68 +880,43 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan install . \
-    --install-folder local_build_ubsan \
-    -s build_type=Release \
-    -s llvm_tools:build_type=Release \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=False \
-      -o llvm_tools:enable_ubsan=True
+cmake -E time \
+  conan install . \
+  --install-folder local_build_ubsan \
+  -s build_type=Release \
+  -s llvm_tools:build_type=Release \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_ubsan=True
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan source . \
-    --source-folder local_build_ubsan \
-    --install-folder local_build_ubsan
+cmake -E time \
+  conan source . \
+  --source-folder local_build_ubsan \
+  --install-folder local_build_ubsan
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan build . \
-    --build-folder local_build_ubsan \
-    --source-folder local_build_ubsan \
-    --install-folder local_build_ubsan
+conan build . \
+  --build-folder local_build_ubsan \
+  --source-folder local_build_ubsan \
+  --install-folder local_build_ubsan
 
 # remove before `conan export-pkg`
 (CONAN_REVISIONS_ENABLED=1 \
     conan remove --force llvm_tools || true)
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan package . \
-    --build-folder local_build_ubsan \
-    --package-folder local_build_ubsan/package_dir \
-    --source-folder local_build_ubsan \
-    --install-folder local_build_ubsan
+conan package . \
+  --build-folder local_build_ubsan \
+  --package-folder local_build_ubsan/package_dir \
+  --source-folder local_build_ubsan \
+  --install-folder local_build_ubsan
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan export-pkg . \
-    conan/stable \
-    --package-folder local_build_ubsan/package_dir \
-    --settings build_type=Release \
-    --force \
-    --profile clang \
-      -o llvm_tools:include_what_you_use=False \
-      -o llvm_tools:enable_ubsan=True
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build_ubsan/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o llvm_tools:include_what_you_use=False \
+    -o llvm_tools:enable_ubsan=True
 
 cmake -E time \
   conan test test_package llvm_tools/master@conan/stable \
