@@ -465,8 +465,7 @@ class LLVMToolsConan(ConanFile):
         #'COMPILER_RT_DEFAULT_TARGET_ONLY': 'ON',
         # COMPILER_RT_OS_DIR
 
-        # TODO: make customizable
-        #cmake.definitions["CMAKE_CXX_STANDARD"]="17"
+        #cmake.definitions["CMAKE_CXX_STANDARD"]="17" #use compiler.cppstd
 
         cmake.definitions["BUILD_SHARED_LIBS"]="ON"
         if self.options.enable_msan:
